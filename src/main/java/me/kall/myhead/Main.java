@@ -37,7 +37,7 @@ public final class Main {
         LivingEntity attacked = event.getEntity();
         Entity directEntity = event.getSource().getDirectEntity();
         if (!(directEntity instanceof Projectile projectile)) return;
-        if (projectile.getOwner() == null || attacked.level.isClientSide()) return;
+        if (projectile.getOwner() == null || attacked.level().isClientSide()) return;
         Entity owner = projectile.getOwner();
 
         ResourceLocation entityId = ForgeRegistries.ENTITY_TYPES.getKey(attacked.getType());
