@@ -1,0 +1,123 @@
+import net.darkhax.curseforgegradle.TaskPublishCurseForge
+
+plugins {
+    id 'dev.architectury.loom' version '1.10-SNAPSHOT'
+    id 'net.darkhax.curseforgegradle' version '1.1.+'
+}
+
+group = project.maven_group
+version = project.minecraft_version + "-" + project.mod_version
+
+base {
+    archivesName = project.archives_name
+}
+
+loom {
+    silentMojangMappingsLicense()
+}
+
+repositories {
+    maven {
+        name = 'ParchmentMC'
+        url = 'https://maven.parchmentmc.org'
+    }
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+        content {
+            includeGroup "maven.modrinth"
+        }
+    }
+    maven {
+        url "https://cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+}
+
+String forgeVersion = ""
+String parchmentVersion = ""
+
+boolean isOld = false
+
+if (minecraft_version == "1.20.1") {
+    forgeVersion = "47.4.2"
+    parchmentVersion = "2023.09.03"
+} else if (minecraft_version == "1.19.2") {
+    forgeVersion = "43.5.0"
+    parchmentVersion = "2022.11.27"
+} else if (minecraft_version == "1.18.2") {
+    forgeVersion = "40.3.10"
+    parchmentVersion = "2022.11.06"
+} else if (minecraft_version == "1.16.5") {
+    forgeVersion = "36.2.42"
+    parchmentVersion = "2022.03.06"
+    isOld = true
+} else {
+    throw new IllegalArgumentException();
+}
+
+dependencies {
+    minecraft "net.minecraft:minecraft:$project.minecraft_version"
+    mappings loom.layered() {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${project.minecraft_version}:${parchmentVersion}@zip")
+    }
+    forge "net.minecraftforge:forge:${project.minecraft_version}-${forgeVersion}"
+}
+
+processResources {
+    inputs.property 'version', project.version
+
+    filesMatching('META-INF/mods.toml') {
+        expand version: project.version
+    }
+}
+
+java {
+    withSourcesJar()
+
+    if (isOld) {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    } else {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    if (isOld) {
+        it.options.release = 8
+    } else {
+        it.options.release = 17
+    }
+}
+
+String currentChangeLog = file("CHANGELOG.md").getText("UTF-8")
+
+String[] javaVersions = ["Java 17", "Java 21", "Java 22"]
+
+if (isOld) {
+    javaVersions = ["Java 17", "Java 21", "Java 22", "Java 8"]
+}
+
+tasks.register("publishCurseForge", TaskPublishCurseForge) {
+    apiToken = System.getenv("CURSEFORGE_TOKEN")
+    disableVersionDetection()
+
+    def mainFile = upload(cf_project_id, remapJar)
+    mainFile.displayName = "${archives_name}-${version}"
+    mainFile.releaseType = "release"
+    mainFile.changelog = currentChangeLog
+    mainFile.changelogType = "markdown"
+    mainFile.addModLoader("Forge")
+    mainFile.addJavaVersion(javaVersions)
+    mainFile.addGameVersion(minecraft_version)
+
+    def sourcesFile = mainFile.withAdditionalFile(sourcesJar)
+
+    sourcesFile.changelog = currentChangeLog
+    sourcesFile.changelogType = "markdown"
+}

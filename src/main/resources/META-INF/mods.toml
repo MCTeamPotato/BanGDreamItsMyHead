@@ -1,0 +1,13 @@
+modLoader = "javafml"
+loaderVersion = "[36,)"
+#issueTrackerURL = ""
+license = "MIT"
+
+[[mods]]
+modId = "myhead"
+version = "${version}"
+displayName = "Lead"
+authors = "Kall"
+description = '''
+'''
+#logoFile = ""
