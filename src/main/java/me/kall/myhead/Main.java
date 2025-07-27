@@ -2,7 +2,7 @@ package me.kall.myhead;
 
 import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -12,9 +12,10 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -26,29 +27,28 @@ public final class Main {
     public static final String MOD_ID = "myhead";
     public static final String MOD_NAME = "BanGDreamItsMyHead";
 
-    public Main() {
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.INSTANCE);
+    public Main(@NotNull FMLJavaModLoadingContext context) {
+        context.registerConfig(ModConfig.Type.COMMON, Config.INSTANCE);
         MinecraftForge.EVENT_BUS.addListener(this::onLivingDamage);
     }
 
     public void onLivingDamage(@NotNull LivingDamageEvent event) {
         if (event.isCanceled()) return;
-        LivingEntity attacked = event.getEntityLiving();
+        LivingEntity attacked = event.getEntity();
         Entity directEntity = event.getSource().getDirectEntity();
-        if (!(directEntity instanceof Projectile)) return;
-        Projectile projectile = (Projectile) directEntity;
+        if (!(directEntity instanceof Projectile projectile)) return;
         if (projectile.getOwner() == null || attacked.level.isClientSide()) return;
         Entity owner = projectile.getOwner();
 
-        ResourceLocation entityId = attacked.getType().getRegistryName();
-        ResourceLocation sourceId = projectile.getType().getRegistryName();
+        ResourceLocation entityId = ForgeRegistries.ENTITY_TYPES.getKey(attacked.getType());
+        ResourceLocation sourceId = ForgeRegistries.ENTITY_TYPES.getKey(projectile.getType());
 
         if (Config.getProjectileBlacklist().contains(sourceId) || Config.getEntityBlacklist().contains(entityId)) return;
 
         if (isHeadShot(attacked, projectile)) {
             event.setAmount(event.getAmount() * Config.DAMAGE_BONUS.get().floatValue());
             if (Config.PLAY_DING.get()) attacked.playSound(SoundEvents.ARROW_HIT_PLAYER, 1.0F, 1.0F);
-            if (Config.ACTION_BAR_NOTIFY.get() && owner instanceof ServerPlayer) ((ServerPlayer) owner).displayClientMessage(new TranslatableComponent(MOD_ID + ".headshot.notify"), true);
+            if (Config.ACTION_BAR_NOTIFY.get() && owner instanceof ServerPlayer) ((ServerPlayer) owner).displayClientMessage(Component.translatable(MOD_ID + ".headshot.notify"), true);
         }
     }
 
