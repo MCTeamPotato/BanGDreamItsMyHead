@@ -2,11 +2,19 @@ import net.darkhax.curseforgegradle.TaskPublishCurseForge
 
 plugins {
     id 'dev.architectury.loom' version '1.10-SNAPSHOT'
+    id "com.github.johnrengelman.shadow" version "8.1.1"
     id 'net.darkhax.curseforgegradle' version '1.1.+'
 }
 
 group = project.maven_group
 version = project.minecraft_version + "-" + project.mod_version
+
+boolean isNeo = minecraft_version == "1.21.1"
+
+configurations {
+    shadow
+    implementation.extendsFrom(shadow)
+}
 
 base {
     archivesName = project.archives_name
@@ -14,6 +22,12 @@ base {
 
 loom {
     silentMojangMappingsLicense()
+
+    if (!isNeo) {
+        forge {
+            mixinConfig 'myhead.mixins.json'
+        }
+    }
 }
 
 repositories {
@@ -34,6 +48,10 @@ repositories {
             includeGroup "curse.maven"
         }
     }
+    maven {
+        name = 'NeoForged'
+        url = 'https://maven.neoforged.net/releases'
+    }
 }
 
 String forgeVersion = ""
@@ -41,21 +59,25 @@ String parchmentVersion = ""
 
 boolean isOld = false
 
-if (minecraft_version == "1.20.1") {
-    forgeVersion = "47.4.2"
-    parchmentVersion = "2023.09.03"
-} else if (minecraft_version == "1.19.2") {
-    forgeVersion = "43.5.0"
-    parchmentVersion = "2022.11.27"
-} else if (minecraft_version == "1.18.2") {
-    forgeVersion = "40.3.10"
-    parchmentVersion = "2022.11.06"
-} else if (minecraft_version == "1.16.5") {
-    forgeVersion = "36.2.42"
-    parchmentVersion = "2022.03.06"
-    isOld = true
+if (isNeo) {
+    parchmentVersion = "2024.11.17"
 } else {
-    throw new IllegalArgumentException();
+    if (minecraft_version == "1.20.1") {
+        forgeVersion = "47.4.2"
+        parchmentVersion = "2023.09.03"
+    } else if (minecraft_version == "1.19.2") {
+        forgeVersion = "43.5.0"
+        parchmentVersion = "2022.11.27"
+    } else if (minecraft_version == "1.18.2") {
+        forgeVersion = "40.3.10"
+        parchmentVersion = "2022.11.06"
+    } else if (minecraft_version == "1.16.5") {
+        forgeVersion = "36.2.42"
+        parchmentVersion = "2022.03.06"
+        isOld = true
+    } else {
+        throw new IllegalArgumentException();
+    }
 }
 
 dependencies {
@@ -64,34 +86,70 @@ dependencies {
         officialMojangMappings()
         parchment("org.parchmentmc.data:parchment-${project.minecraft_version}:${parchmentVersion}@zip")
     }
-    forge "net.minecraftforge:forge:${project.minecraft_version}-${forgeVersion}"
+    if (isNeo) {
+        neoForge "net.neoforged:neoforge:21.1.192"
+    } else {
+        forge "net.minecraftforge:forge:${project.minecraft_version}-${forgeVersion}"
+    }
+    shadow(annotationProcessor("io.github.llamalad7:mixinextras-common:${project.mixinextras_version}"))
+}
+
+shadowJar {
+    configurations = [project.configurations.shadow]
+    relocate "com.llamalad7.mixinextras", "me.kall.myhead.mixinextras"
+    mergeServiceFiles()
+
+    archiveClassifier = "dev-shadow"
 }
 
 processResources {
     inputs.property 'version', project.version
 
-    filesMatching('META-INF/mods.toml') {
-        expand version: project.version
+    if (isNeo) {
+        filesMatching('META-INF/neoforge.mods.toml') {
+            expand version: project.version
+        }
+        exclude("META-INF/mods.toml")
+    } else {
+        filesMatching('META-INF/mods.toml') {
+            expand version: project.version
+        }
+        exclude("META-INF/neoforge.mods.toml")
     }
 }
 
 java {
     withSourcesJar()
 
-    if (isOld) {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+    if (isNeo) {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     } else {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        if (isOld) {
+            sourceCompatibility = JavaVersion.VERSION_1_8
+            targetCompatibility = JavaVersion.VERSION_1_8
+        } else {
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
+        }
     }
 }
 
+remapJar {
+    dependsOn shadowJar
+    inputFile = shadowJar.archiveFile
+    archiveClassifier = null
+}
+
 tasks.withType(JavaCompile).configureEach {
-    if (isOld) {
-        it.options.release = 8
+    if (isNeo) {
+        it.options.release = 21
     } else {
-        it.options.release = 17
+        if (isOld) {
+            it.options.release = 8
+        } else {
+            it.options.release = 17
+        }
     }
 }
 
@@ -99,8 +157,12 @@ String currentChangeLog = file("CHANGELOG.md").getText("UTF-8")
 
 String[] javaVersions = ["Java 17", "Java 21", "Java 22"]
 
-if (isOld) {
-    javaVersions = ["Java 17", "Java 21", "Java 22", "Java 8"]
+if (isNeo) {
+    javaVersions = ["Java 21", "Java 22"]
+} else {
+    if (isOld) {
+        javaVersions = ["Java 17", "Java 21", "Java 22", "Java 8"]
+    }
 }
 
 tasks.register("publishCurseForge", TaskPublishCurseForge) {
