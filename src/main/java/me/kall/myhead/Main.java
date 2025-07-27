@@ -77,7 +77,7 @@ public final class Main {
             DAMAGE_BONUS = builder.defineInRange("HeadshotDamageMultiplier", 2.00, 1.00, Double.MAX_VALUE);
             PLAY_DING = builder.define("PlayDingSoundOnHeadshot", true);
             ACTION_BAR_NOTIFY = builder.define("NotifyShooterOnActionBar", false);
-            STRICT_HEADSHOT = builder.comment("If enabled, headshot won't take place unless the projectile hurt the position above the attacked's eyes.").define("StrictHeadshot", false);
+            STRICT_HEADSHOT = builder.comment("If enabled, headshot won't take place unless the projectile hurts the position above the attacked's eyes.").define("StrictHeadshot", false);
             builder.pop();
             INSTANCE = builder.build();
         }
