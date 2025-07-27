@@ -83,12 +83,12 @@ public final class Main {
         }
 
         public static Set<ResourceLocation> getEntityBlacklist() {
-            if (ENTITY_BLACKLIST == null) ENTITY_BLACKLIST = ENTITIES.get().stream().map(ResourceLocation::new).collect(Collectors.toSet());
+            if (ENTITY_BLACKLIST == null) ENTITY_BLACKLIST = ENTITIES.get().stream().map(ResourceLocation::parse).collect(Collectors.toSet());
             return ENTITY_BLACKLIST;
         }
 
         public static Set<ResourceLocation> getProjectileBlacklist() {
-            if (PROJECTILE_BLACKLIST == null) PROJECTILE_BLACKLIST = PROJECTILES.get().stream().map(ResourceLocation::new).collect(Collectors.toSet());
+            if (PROJECTILE_BLACKLIST == null) PROJECTILE_BLACKLIST = PROJECTILES.get().stream().map(ResourceLocation::parse).collect(Collectors.toSet());
             return PROJECTILE_BLACKLIST;
         }
     }
