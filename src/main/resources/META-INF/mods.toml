@@ -6,7 +6,7 @@ license = "MIT"
 [[mods]]
 modId = "myhead"
 version = "${version}"
-displayName = "Lead"
+displayName = "BanGDreamItsMyHead"
 authors = "Kall"
 description = '''
 '''
