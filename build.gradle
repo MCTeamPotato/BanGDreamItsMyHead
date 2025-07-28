@@ -2,7 +2,6 @@ import net.darkhax.curseforgegradle.TaskPublishCurseForge
 
 plugins {
     id 'dev.architectury.loom' version '1.10-SNAPSHOT'
-    id "com.github.johnrengelman.shadow" version "8.1.1"
     id 'net.darkhax.curseforgegradle' version '1.1.+'
 }
 
@@ -10,11 +9,6 @@ group = project.maven_group
 version = project.minecraft_version + "-" + project.mod_version
 
 boolean isNeo = minecraft_version == "1.21.1"
-
-configurations {
-    shadow
-    implementation.extendsFrom(shadow)
-}
 
 base {
     archivesName = project.archives_name
@@ -91,15 +85,6 @@ dependencies {
     } else {
         forge "net.minecraftforge:forge:${project.minecraft_version}-${forgeVersion}"
     }
-    shadow(annotationProcessor("io.github.llamalad7:mixinextras-common:${project.mixinextras_version}"))
-}
-
-shadowJar {
-    configurations = [project.configurations.shadow]
-    relocate "com.llamalad7.mixinextras", "me.kall.myhead.mixinextras"
-    mergeServiceFiles()
-
-    archiveClassifier = "dev-shadow"
 }
 
 processResources {
@@ -133,12 +118,6 @@ java {
             targetCompatibility = JavaVersion.VERSION_17
         }
     }
-}
-
-remapJar {
-    dependsOn shadowJar
-    inputFile = shadowJar.archiveFile
-    archiveClassifier = null
 }
 
 tasks.withType(JavaCompile).configureEach {
