@@ -55,17 +55,14 @@ public final class Main {
     private static boolean isHeadShot(@NotNull LivingEntity attacked, @NotNull Projectile projectile) {
         double hitY = projectile.getY();
         double eyeY = attacked.getEyeY();
-        double maxY = attacked.getBoundingBox().maxY;
-        double radius = maxY - eyeY;
-        if (Config.STRICT_HEADSHOT.get()) return hitY >= eyeY;
-        return hitY >= eyeY - radius;
+        return hitY >= eyeY ;
     }
 
     private static final class Config {
         private static final ForgeConfigSpec INSTANCE;
         private static final ForgeConfigSpec.ConfigValue<List<? extends String>> ENTITIES, PROJECTILES;
         private static final ForgeConfigSpec.DoubleValue DAMAGE_BONUS;
-        private static final ForgeConfigSpec.BooleanValue PLAY_DING, ACTION_BAR_NOTIFY, STRICT_HEADSHOT;
+        private static final ForgeConfigSpec.BooleanValue PLAY_DING, ACTION_BAR_NOTIFY;
 
         public static Set<ResourceLocation> ENTITY_BLACKLIST = null, PROJECTILE_BLACKLIST = null;
 
@@ -77,7 +74,6 @@ public final class Main {
             DAMAGE_BONUS = builder.defineInRange("HeadshotDamageMultiplier", 2.00, 1.00, Double.MAX_VALUE);
             PLAY_DING = builder.define("PlayDingSoundOnHeadshot", true);
             ACTION_BAR_NOTIFY = builder.define("NotifyShooterOnActionBar", false);
-            STRICT_HEADSHOT = builder.comment("If enabled, headshot won't take place unless the projectile hurts the position above the attacked's eyes.").define("StrictHeadshot", false);
             builder.pop();
             INSTANCE = builder.build();
         }
